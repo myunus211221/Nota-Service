@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nota Service</title>
+  <link rel="stylesheet" href="styles.css">
+  <style id="pageStyle"></style>
+</head>
+<body>
+
+  <!-- Splash -->
+  <div id="splash" class="splash"><div class="spinner"></div> Memuat aplikasi...</div>
+
+  <!-- ===================== LOGIN ===================== -->
+  <div id="loginView" class="login-wrap hidden">
+    <form id="formLogin" class="login-card" autocomplete="on" novalidate>
+      <div class="login-logo">🛠</div>
+      <h1 id="loginTitle">Nota Service</h1>
+      <p><span id="loginToko"></span><br>Masuk sebagai admin untuk mengelola nota service.</p>
+      <div id="loginError" class="alert alert-error hidden"></div>
+      <div class="field">
+        <label for="lUser">Username</label>
+        <input type="text" id="lUser" name="username" autocomplete="username" autocapitalize="none" required>
+      </div>
+      <div class="field">
+        <label for="lPass">Password</label>
+        <input type="password" id="lPass" name="password" autocomplete="current-password" required>
+      </div>
+      <label class="check" style="margin-bottom:16px"><input type="checkbox" id="lShow"> Tampilkan password</label>
+      <button type="submit" class="btn btn-block" id="btnLogin">Masuk</button>
+    </form>
+  </div>
+
+  <!-- ===================== APLIKASI ADMIN ===================== -->
+  <div id="appView" class="hidden">
+    <header class="topbar">
+      <div class="topbar-in">
+        <div class="brand">
+          <div class="brand-ico">🛠</div>
+          <div style="min-width:0">
+            <div class="brand-name" id="brandName">Nota Service</div>
+            <div class="brand-sub">Panel Admin</div>
+          </div>
+        </div>
+        <div class="user-box">
+          <span class="user-name">👤 <b id="userName"></b></span>
+          <button class="btn btn-sm btn-ghost hidden" id="btnUser" type="button">Kelola User</button>
+          <button class="btn btn-sm" id="btnLogout" type="button">Keluar</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+      <!-- Statistik -->
+      <section class="stats" id="stats">
+        <button type="button" class="stat stat-total" data-status=""><div class="num" id="stTotal">0</div><div class="lbl">Total Nota Service</div></button>
+        <button type="button" class="stat" data-status="Baru Diterima"><div class="num" id="stBaru">0</div><div class="lbl">Baru Diterima</div></button>
+        <button type="button" class="stat" data-status="Proses Service"><div class="num" id="stProses">0</div><div class="lbl">Dalam Proses</div></button>
+        <button type="button" class="stat" data-status="Konfirmasi Harga"><div class="num" id="stKonfirmasi">0</div><div class="lbl">Menunggu Konfirmasi Harga</div></button>
+        <button type="button" class="stat" data-status="Selesai Service"><div class="num" id="stSelesai">0</div><div class="lbl">Selesai Service</div></button>
+        <button type="button" class="stat" data-status="Menunggu Diambil"><div class="num" id="stMenunggu">0</div><div class="lbl">Menunggu Diambil</div></button>
+        <button type="button" class="stat" data-status="Sudah Diambil"><div class="num" id="stDiambil">0</div><div class="lbl">Sudah Diambil</div></button>
+      </section>
+
+      <!-- Filter -->
+      <section class="panel">
+        <div class="toolbar">
+          <div class="col-q">
+            <label for="fcQ">Cari</label>
+            <input type="text" id="fcQ" placeholder="No. nota, nama, no. HP, brand, tipe..." autocomplete="off">
+          </div>
+          <div>
+            <label for="fcStatus">Status Pengerjaan</label>
+            <select id="fcStatus"><option value="">Semua status</option></select>
+          </div>
+          <div>
+            <label for="fcGaransi">Status Garansi</label>
+            <select id="fcGaransi"><option value="">Semua</option><option>Garansi</option><option>Non Garansi</option></select>
+          </div>
+          <div>
+            <label for="fcDari">Masuk dari</label>
+            <input type="date" id="fcDari">
+          </div>
+          <div>
+            <label for="fcSampai">Masuk sampai</label>
+            <input type="date" id="fcSampai">
+          </div>
+          <div><button type="button" class="btn btn-ghost" id="btnResetFilter">Reset</button></div>
+          <div><button type="button" class="btn" id="btnBaru">+ Nota Baru</button></div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Nota</th><th>Tgl Masuk</th><th>Konsumen</th><th>Barang</th><th>Garansi</th><th>Status</th><th>Aksi</th></tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+        <div class="card-list" id="cardList"></div>
+        <div class="empty hidden" id="emptyState">Belum ada data yang sesuai.</div>
+        <div class="list-meta" id="listMeta"></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ===================== MODAL FORM ===================== -->
+  <div class="modal" id="modalForm" role="dialog" aria-modal="true" aria-labelledby="formTitle">
+    <form class="modal-card wide" id="formService" novalidate>
+      <div class="modal-head">
+        <h2 id="formTitle">Nota Service Baru</h2>
+        <button type="button" class="modal-x" data-close="modalForm" aria-label="Tutup">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="formError" class="alert alert-error hidden"></div>
+        <div class="form-grid">
+          <div><label>Nomor Nota Service</label><input type="text" id="fNomor" readonly></div>
+          <div><label>Tanggal Masuk</label><input type="text" id="fTglMasuk" readonly></div>
+
+          <div><label for="fNama">Nama Konsumen <span class="req">*</span></label><input type="text" id="fNama" maxlength="100" autocomplete="off"></div>
+          <div><label for="fHp">No. HP / WhatsApp <span class="req">*</span></label><input type="tel" id="fHp" maxlength="20" placeholder="08xxxxxxxxxx" autocomplete="off"><small>Otomatis diubah ke format +62.</small></div>
+
+          <div><label for="fBrand">Brand / Merek <span class="req">*</span></label><input type="text" id="fBrand" maxlength="60" autocomplete="off"></div>
+          <div><label for="fTipe">Tipe / Model <span class="req">*</span></label><input type="text" id="fTipe" maxlength="80" autocomplete="off"></div>
+
+          <div><label for="fSeri">Nomor Seri</label><input type="text" id="fSeri" maxlength="60" autocomplete="off"></div>
+          <div>
+            <label for="fGaransi">Status Garansi <span class="req">*</span></label>
+            <select id="fGaransi"><option value="">-- Pilih --</option><option>Garansi</option><option>Non Garansi</option></select>
+          </div>
+
+          <div id="wrapBeli" class="hidden">
+            <label for="fBeli">Tanggal Pembelian <span class="req">*</span></label>
+            <input type="date" id="fBeli">
+            <small id="beliInfo">Wajib untuk service garansi. Garansi berlaku 2 tahun sejak tanggal pembelian.</small>
+          </div>
+
+          <div class="full"><label for="fKeluhan">Keluhan Konsumen <span class="req">*</span></label><textarea id="fKeluhan" maxlength="1000"></textarea></div>
+
+          <div>
+            <label for="fStatus">Status Pengerjaan <span class="req">*</span></label>
+            <select id="fStatus"></select>
+            <small id="fStatusHint">"Konfirmasi Harga" hanya untuk service Non Garansi dan wajib ada estimasi biaya.</small>
+          </div>
+          <div><label>Tanggal Selesai</label><input type="text" id="fSelesai" readonly></div>
+
+          <div class="full biaya-box" id="biayaBox">
+            <label style="margin-bottom:2px">Rincian Biaya Service</label>
+            <small id="biayaHint"></small>
+            <div id="spList"></div>
+            <button type="button" class="btn btn-sm btn-soft" id="btnTambahSp">+ Tambah Sparepart</button>
+            <div class="biaya-jasa">
+              <label for="fJasa">Biaya Jasa</label>
+              <input type="text" id="fJasa" inputmode="numeric" maxlength="13" placeholder="0" autocomplete="off">
+            </div>
+            <div class="biaya-total"><span id="fTotalLabel">Total Biaya</span><b id="fTotal">Rp 0</b></div>
+          </div>
+
+          <div class="full"><label for="fCatatan">Catatan Teknisi <small>(hanya terlihat admin)</small></label><textarea id="fCatatan" maxlength="1000"></textarea></div>
+          <div><label>Tanggal Diambil</label><input type="text" id="fDiambil" readonly></div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" id="btnFormTutup" data-close="modalForm">Batal</button>
+        <button type="button" class="btn btn-ghost" id="btnFormReset">Reset</button>
+        <button type="button" class="btn btn-soft hidden" id="btnFormNota">Cetak Nota</button>
+        <button type="submit" class="btn" id="btnFormSimpan">Simpan</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ===================== MODAL DETAIL ===================== -->
+  <div class="modal" id="modalDetail" role="dialog" aria-modal="true">
+    <div class="modal-card wide">
+      <div class="modal-head">
+        <h2 id="detailTitle">Detail Service</h2>
+        <button type="button" class="modal-x" data-close="modalDetail" aria-label="Tutup">&times;</button>
+      </div>
+      <div class="modal-body" id="detailBody"></div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" data-close="modalDetail">Tutup</button>
+        <button type="button" class="btn btn-ghost" id="dtEdit">Edit</button>
+        <button type="button" class="btn btn-ghost" id="dtStatus">Ubah Status</button>
+        <button type="button" class="btn btn-soft" id="dtNota">Cetak Nota</button>
+        <button type="button" class="btn btn-wa" id="dtWa">WhatsApp</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== MODAL UBAH STATUS ===================== -->
+  <div class="modal" id="modalStatus" role="dialog" aria-modal="true">
+    <form class="modal-card small" id="formStatus" novalidate>
+      <div class="modal-head">
+        <h2>Ubah Status</h2>
+        <button type="button" class="modal-x" data-close="modalStatus" aria-label="Tutup">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="statusError" class="alert alert-error hidden"></div>
+        <p style="margin:0 0 12px"><b id="sNota"></b><br><span class="sub" id="sInfo"></span></p>
+        <div style="margin-bottom:12px">
+          <label for="sStatus">Status baru</label>
+          <select id="sStatus"></select>
+          <small id="sHint"></small>
+        </div>
+        <div style="margin-bottom:12px">
+          <label for="sKet">Keterangan <small>(opsional, internal, tidak tampil ke konsumen)</small></label>
+          <textarea id="sKet" maxlength="300" style="min-height:64px"></textarea>
+        </div>
+        <label class="check"><input type="checkbox" id="sWa" checked> Siapkan pesan WhatsApp setelah disimpan</label>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" data-close="modalStatus">Batal</button>
+        <button type="submit" class="btn" id="btnStatusSimpan">Simpan Status</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ===================== MODAL WHATSAPP ===================== -->
+  <div class="modal" id="modalWa" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2 id="waTitle">Kirim Status via WhatsApp</h2>
+        <button type="button" class="modal-x" data-close="modalWa" aria-label="Tutup">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin:0 0 10px">Nota <b id="waNota"></b> &middot; Tujuan: <b id="waNomor"></b></p>
+        <label for="waPesan">Pesan (dapat diubah sebelum dikirim)</label>
+        <textarea id="waPesan" style="min-height:230px"></textarea>
+        <div class="alert alert-info" style="margin:12px 0 0">
+          Tombol hijau hanya <b>membuka WhatsApp</b> dengan pesan terisi. Pesan baru terkirim setelah Anda menekan tombol kirim di WhatsApp.
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" data-close="modalWa">Tutup</button>
+        <button type="button" class="btn btn-ghost" id="waJenis">Pakai Pesan Nota</button>
+        <button type="button" class="btn btn-ghost" id="waSalin">Salin Tautan Pelacakan</button>
+        <button type="button" class="btn btn-soft" id="waNotaBtn">Cetak Nota</button>
+        <a class="btn btn-wa" id="waLink" href="#" target="_blank" rel="noopener noreferrer">Kirim Status via WhatsApp</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== MODAL NOTA ===================== -->
+  <div class="modal" id="modalNota" role="dialog" aria-modal="true">
+    <div class="modal-card wide">
+      <div class="modal-head no-print">
+        <h2>Pratinjau Nota</h2>
+        <button type="button" class="modal-x" data-close="modalNota" aria-label="Tutup">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="paper-pick no-print">
+          <label><input type="radio" name="paper" value="a4"> Printer biasa (A4)</label>
+          <label><input type="radio" name="paper" value="58"> Thermal 58 mm</label>
+        </div>
+        <div class="nota-box" id="notaBox"></div>
+        <p class="hint no-print" style="margin:10px 0 0">Pada jendela cetak, atur Margin: <b>None/Tidak ada</b> dan matikan <b>Headers and footers</b> agar hasil tidak terpotong.</p>
+      </div>
+      <div class="modal-foot no-print">
+        <button type="button" class="btn btn-ghost" data-close="modalNota">Tutup</button>
+        <button type="button" class="btn btn-wa" id="btnNotaWa">Kirim Nota via WhatsApp</button>
+        <button type="button" class="btn btn-soft" id="btnNotaJpg">Simpan sebagai JPG</button>
+        <button type="button" class="btn" id="btnCetak">Cetak</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== MODAL NOTA JPG ===================== -->
+  <div class="modal" id="modalJpg" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2>Nota JPG</h2>
+        <button type="button" class="modal-x" data-close="modalJpg" aria-label="Tutup">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="jpg-box"><img id="jpgImg" alt="Gambar nota service"></div>
+        <div class="alert alert-info" style="margin:12px 0 0">
+          Simpan gambar, lalu kirim lewat WhatsApp: buka chat konsumen, tekan ikon lampiran, dan pilih gambar nota.
+          Jika tombol Unduh tidak berfungsi, tekan lama pada gambar lalu pilih <b>Simpan gambar</b>.
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" data-close="modalJpg">Tutup</button>
+        <button type="button" class="btn btn-soft hidden" id="jpgBagikan">Bagikan</button>
+        <a class="btn" id="jpgUnduh" href="#" download="nota.jpg">Unduh JPG</a>
+        <a class="btn btn-wa" id="jpgWa" href="#" target="_blank" rel="noopener noreferrer">Buka WhatsApp Konsumen</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== MODAL KELOLA USER ===================== -->
+  <div class="modal" id="modalUser" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2>Kelola User</h2>
+        <button type="button" class="modal-x" data-close="modalUser" aria-label="Tutup">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="userList"></div>
+        <form id="formUser" novalidate style="margin-top:16px">
+          <h3 style="font-size:15px;margin-bottom:10px">Tambah User Baru</h3>
+          <div id="userError" class="alert alert-error hidden"></div>
+          <div style="margin-bottom:12px">
+            <label for="uUser">Username</label>
+            <input type="text" id="uUser" maxlength="30" autocomplete="off" autocapitalize="none">
+          </div>
+          <div style="margin-bottom:8px">
+            <label for="uPass">Password <small>(minimal 8 karakter)</small></label>
+            <input type="password" id="uPass" maxlength="200" autocomplete="new-password">
+          </div>
+          <label class="check" style="margin-bottom:12px"><input type="checkbox" id="uShow"> Tampilkan password</label>
+          <button type="submit" class="btn" id="btnUserTambah">Tambah User</button>
+        </form>
+        <p class="hint" style="margin:14px 0 0">User dapat membuat nota, mengubah status, mencetak nota, dan mengirim WhatsApp. Hanya admin utama yang dapat mengedit dan menghapus nota serta mengelola user.</p>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" data-close="modalUser">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== MODAL KONFIRMASI HAPUS ===================== -->
+  <div class="modal" id="modalHapus" role="dialog" aria-modal="true">
+    <div class="modal-card small">
+      <div class="modal-head">
+        <h2>Hapus Data Service</h2>
+        <button type="button" class="modal-x" data-close="modalHapus" aria-label="Tutup">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-top:0">Hapus nota <b id="hNota"></b> milik <b id="hNama"></b>?</p>
+        <p class="hint">Data dihapus dari daftar service dan tautan pelacakannya tidak akan berfungsi lagi. Catatan riwayat perubahan status tetap tersimpan di spreadsheet. Tindakan ini tidak dapat dibatalkan dari aplikasi.</p>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" data-close="modalHapus">Batal</button>
+        <button type="button" class="btn btn-danger-solid" id="btnHapusYa">Ya, Hapus</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-wrap" id="toastWrap" aria-live="polite"></div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
